@@ -432,18 +432,25 @@ sys_enter_judge(void *eip)
 	sched_yield();
 	return 0;
 }
-
 static int
 sys_accept_enter_judge(envid_t envid, struct JudgeParams *prm, struct JudgeResult *res)
 {
 	// TODO: validate
+	if(prm==NULL)
+		return -E_INVAL;
+	user_mem_assert(curenv, prm, sizeof(struct JudgeParams), PTE_U);
+	if(res==NULL)
+		return -E_INVAL;
+	user_mem_assert(curenv, res, sizeof(struct JudgeResult), PTE_U|PTE_W);
 	int ms = prm->ms;
+	int kb = prm->kb;
 	
 	struct Env *env;
 	int ret = envid2env(envid, &env, 0);
 	if(ret < 0) return -E_INVAL;
-	if(!env->env_judge_waiting) return -E_INVAL;
-	if(ms < 1 || ms > 500000) return -E_INVAL;
+	if(!env->env_judge_waiting) return -E_JUDGE_WAIT;
+	if(ms < 1 || ms > 500000) return -E_TL_OUTOF_RANGE;
+	if(kb < 1 || kb > 262144) return -E_ML_OUTOF_RANGE;
 	
 	lapic_timer_disable();
 	
@@ -483,7 +490,7 @@ static int
 sys_quit_judge()
 {
 	// cprintf("quit judge!\n");
-	if(!curenv->env_judging) return -E_INVAL;
+	if(!curenv->env_judging) return -E_ILLEGAL;
 	
 	finish_judge(VERDICT_OK);
 	// won't reach here

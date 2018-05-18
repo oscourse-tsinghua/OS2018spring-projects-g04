@@ -25,6 +25,12 @@ enum {
 	E_FILE_EXISTS	,	// File already exists
 	E_NOT_EXEC	,	// File not a valid executable
 	E_NOT_SUPP	,	// Operation not supported
+	E_JUDGE_WAIT	,	// Judge waiting
+	E_ML_OUTOF_RANGE,	// ML must in [1,262144]
+	E_TL_OUTOF_RANGE,	// TL must in [1,500000]
+	E_EMPTY_POINTER,	// The pointer is empty
+	E_ILLEGAL,		// Player used the illegal
+	
 
 	MAXERROR
 };

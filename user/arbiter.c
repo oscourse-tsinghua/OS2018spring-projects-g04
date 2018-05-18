@@ -44,6 +44,30 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+static void
+args_error(unsigned error_type, struct JudgeParams *prm, struct JudgeResult *res)
+{
+	cprintf("ARBITER ERROR:\t");
+	switch(error_type)
+	{
+		case E_ML_OUTOF_RANGE:
+			cprintf("Memery limit %d NOT in range [1,262144]\n",prm->kb);
+			break;
+		case E_TL_OUTOF_RANGE:
+			cprintf("Time limit %d NOT in range [1,500000]\n",prm->ms);
+			break;
+		case E_EMPTY_POINTER:
+			cprintf("The pointer is empty!\n");
+			break;
+		case E_ILLEGAL:
+			cprintf("Player's program used an illegal syscall or other option!\n");
+			break;
+		default:
+			cprintf("E_INVAL\n");
+	}
+	exit();
+}
+
 void
 umain(int argc, char **argv)
 {
@@ -95,6 +119,8 @@ umain(int argc, char **argv)
 			cprintf("ARBITER: mem_kb = %d\n", res.mem_kb);
 			break;
 		}
+		if(ret!=-E_JUDGE_WAIT)
+			args_error(-ret,&prm,&res);
 		sys_yield();
 	}
 	wait(env);
