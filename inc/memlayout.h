@@ -84,9 +84,7 @@
 
 
 // All physical memory mapped at this address
-// #define	KERNBASE	0xF0000000
-#define	KERNBASE	0x00000000
-//saffah
+#define	KERNBASE	0xF0000000
 
 // At IOPHYSMEM (640K) there is a 384K hole for I/O.  From the kernel,
 // IOPHYSMEM can be addressed at KERNBASE + IOPHYSMEM.  The hole ends
@@ -177,6 +175,13 @@ extern volatile pde_t uvpd[];     // VA of current page directory
  * You can map a struct PageInfo * to the corresponding physical address
  * with page2pa() in kern/pmap.h.
  */
+
+struct PagePos
+{
+	int32_t min_envid;
+	void *v;
+};
+
 struct PageInfo {
 	// Next page on the free list.
 	struct PageInfo *pp_link;
@@ -185,6 +190,10 @@ struct PageInfo {
 	// to this page, for pages allocated using page_alloc.
 	// Pages allocated at boot time using pmap.c's
 	// boot_alloc do not have valid reference count fields.
+	struct PagePos pos;
+	
+	int target_pp;
+	int target_pp_inv;
 
 	uint16_t pp_ref;
 };

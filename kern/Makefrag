@@ -16,24 +16,103 @@ KERN_LDFLAGS := $(LDFLAGS) -T kern/kernel.ld -nostdlib
 KERN_SRCFILES :=	kern/entry.S \
 			kern/entrypgdir.c \
 			kern/init.c \
-			kern/memdetect.c \
 			kern/console.c \
 			kern/monitor.c \
-			kern/pmem.c \
-			kern/vmem.c \
+			kern/pmap.c \
+			kern/env.c \
 			kern/kclock.c \
+			kern/picirq.c \
 			kern/printf.c \
+			kern/trap.c \
+			kern/timer.c \
+			kern/trapentry.S \
+			kern/sched.c \
+			kern/syscall.c \
 			kern/kdebug.c \
-			lib/read_eip.S \
+			kern/judge.c \
+			kern/sm.c \
 			lib/printfmt.c \
 			lib/readline.c \
 			lib/string.c
+
+# Source files for LAB4
+KERN_SRCFILES +=	kern/mpentry.S \
+			kern/mpconfig.c \
+			kern/lapic.c \
+			kern/spinlock.c
+
+# Source files for LAB6
+KERN_SRCFILES +=	kern/e100.c \
+			kern/e1000.c \
+			kern/pci.c \
+			kern/time.c
 
 # Only build files if they exist.
 KERN_SRCFILES := $(wildcard $(KERN_SRCFILES))
 
 # Binary program images to embed within the kernel.
-KERN_BINFILES := 
+# Binary files for LAB3
+KERN_BINFILES :=	user/hello \
+			user/buggyhello \
+			user/buggyhello2 \
+			user/evilhello \
+			user/testbss \
+			user/divzero \
+			user/breakpoint \
+			user/softint \
+			user/badsegment \
+			user/faultread \
+			user/faultreadkernel \
+			user/faultwrite \
+			user/faultwritekernel
+
+# Binary files for LAB4
+KERN_BINFILES +=	user/idle \
+			user/yield \
+			user/dumbfork \
+			user/stresssched \
+			user/faultdie \
+			user/faultregs \
+			user/faultalloc \
+			user/faultallocbad \
+			user/faultnostack \
+			user/tf \
+			user/faultbadhandler \
+			user/faultevilhandler \
+			user/forktree \
+			user/sendpage \
+			user/spin \
+			user/fairness \
+			user/pingpong \
+			user/pingpongs \
+			user/bh \
+			user/primes
+# Binary files for LAB5
+KERN_BINFILES +=	user/faultio\
+	      		user/spawnfaultio\
+	      		user/testfile \
+			user/spawnhello \
+			user/icode \
+			fs/fs
+
+# Binary files for LAB6
+KERN_BINFILES +=	user/testtime \
+			user/httpd \
+			user/echosrv \
+			user/echotest \
+			net/testoutput \
+			net/testinput \
+			net/ns
+
+# Binary files for LAB5
+KERN_BINFILES +=	user/testpteshare \
+			user/testfdsharing \
+			user/testpipe \
+			user/testpiperace \
+			user/testpiperace2 \
+			user/primespipe \
+			user/testkbd \
+			user/testshell
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))
 KERN_OBJFILES := $(patsubst %.S, $(OBJDIR)/%.o, $(KERN_OBJFILES))
@@ -53,11 +132,6 @@ $(OBJDIR)/kern/%.o: kern/%.S $(OBJDIR)/.vars.KERN_CFLAGS
 	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/kern/%.o: lib/%.c $(OBJDIR)/.vars.KERN_CFLAGS
-	@echo + cc $<
-	@mkdir -p $(@D)
-	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -c -o $@ $<
-
-$(OBJDIR)/kern/%.o: lib/%.S $(OBJDIR)/.vars.KERN_CFLAGS
 	@echo + cc $<
 	@mkdir -p $(@D)
 	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -c -o $@ $<
