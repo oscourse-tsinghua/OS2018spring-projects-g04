@@ -25,5 +25,7 @@ finish_judge(int verdict)
 	judger_env->env_judge_res->mem_kb = pgs * PGSIZE / 1024;
 	lcr3(PADDR(curenv->env_pgdir));
 	
+	lapic_timer_single_shot(DEFAULT_TIMER_INTERVAL);
+	
 	sched_yield(); // won't return
 }

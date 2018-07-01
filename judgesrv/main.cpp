@@ -17,6 +17,14 @@ QDataStream ds;
 
 #define printf(x...) fprintf(stderr, x)
 
+size_t fileSize(const char *fn)
+{
+	struct stat st;
+	if(stat(fn, &st))
+		return 0;
+	return st.st_size;
+}
+
 void sendFile(const char *sfn, const char *tfn)
 {
 	printf("send %s -> %s\n", sfn, tfn);
@@ -25,24 +33,47 @@ void sendFile(const char *sfn, const char *tfn)
 	ts.flush();
 	sock.waitForReadyRead();
 	qDebug() << ts.readAll();
-	char buf[512];
+	int sz = fileSize(sfn);
+	char *fileAll = new char[sz];
 	FILE *fin = fopen(sfn, "rb");
-	int r;
-	while((r = fread(buf + 1, 1, sizeof(buf) - 2, fin)) > 0)
+	fread(fileAll, 1, sz, fin);
+	fclose(fin);
+	
+	typedef pair<int, int> pii; // (off, len)
+	set<pii> todo;
+	for(int i = 0; i < sz; i += 500)
+		todo.insert(pii(i, min(sz - i, 500)));
+	
+	char buf[512];
+	while(todo.size())
 	{
-		buf[0] = 'z';
-		buf[r + 1] = 0;
-		ds.writeRawData(buf, r + 1);
-		sock.flush();
-		sock.waitForReadyRead();
-		qDebug() << ts.readAll();
+		for(pii p: todo)
+		{
+			memcpy(buf + 4, &p.first, 4);
+			memcpy(buf + 8, fileAll + p.first, p.second);
+			buf[0] = 'g';
+			buf[1] = 'g';
+			buf[2] = 'g';
+			buf[3] = 'g';
+			ds.writeRawData(buf, p.second + 4);
+			sock.flush();
+		}
+		while(sock.waitForReadyRead(1000))
+		{
+			int len = sock.readDatagram(buf, sizeof(buf));
+			if(buf[0] != 'a') continue;
+			int off; memcpy(&off, buf[4], 4);
+			auto it = todo.lower_bound(pii(off, 0));
+			if(it != todo.end() && it->first == off) todo.erase(it);
+			if(!todo.size()) break;
+		}
 	}
 	ts << "e";
 	ts.flush();
 	sock.waitForReadyRead();
 	qDebug() << ts.readAll();
-	fclose(fin);
 	printf("send ok\n");
+	delete[] fileAll;
 }
 void runCmd(string cmd)
 {
@@ -63,14 +94,6 @@ QString fileContent(string fn)
 	sock.waitForReadyRead();
 	printf("fileContent ok\n");
 	return ts.readAll();
-}
-
-size_t fileSize(const char *fn)
-{
-	struct stat st;
-	if(stat(fn, &st))
-		return 0;
-	return st.st_size;
 }
 
 // fn = ***.c
